@@ -1,0 +1,470 @@
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css");
+
+body { 
+  margin: 0;
+  padding: 0;
+  font-family: 'F1';
+  background-color: #222;
+  color: white;
+  overflow-x: hidden;
+}
+
+button { 
+  border: 0;
+  background-color: inherit;
+  color: inherit;
+  font-family: inherit
+}
+
+/* Remove arrow buttons from number input fields */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { 
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@font-face { 
+  font-family: 'F1';
+  src: url('/assets/Formula1-Bold.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+}
+
+
+@font-face { 
+  font-family: 'F1reg';
+  src: url('/assets/Formula1-Regular.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+}
+
+:root { 
+  padding: 0;
+  margin: 0;
+}
+
+.w100 { 
+  width: 100%;
+  margin: 0
+}
+
+.center { 
+  text-align: center;
+}
+
+.floatl { 
+  float: left
+}
+
+.floatr { 
+  float: right
+}
+
+.white { color: white}
+
+.f1 { font-family: 'F1'}
+
+.header-background {
+  background-color: /*#d70909*/ #222;
+  text-align: center;
+  height: 80px;
+  font-family: 'F1';
+  font-size: 16px;
+  text-align: left;
+  border-bottom: 1px solid #222;
+  display: flex;
+  align-items: center;
+}
+
+.header-background button {
+  font-size: 13px;
+  height: 80px;
+  margin-left: auto;
+  margin-right: 8px;
+  padding: 0 5px;
+  width: 170px;
+}
+
+.header-background button:hover,
+.race-element:active { 
+  background-color: #b60808;
+  cursor: pointer;
+}
+
+.race-header { 
+  padding-left: 5vw;
+  display: flex;
+  align-items: center;
+  height: 30vw;
+  font-size: 2vw;
+  box-sizing: border-box;
+}
+
+.home-header {font-size: 18px}
+
+.header-logo { 
+  height: 50px;
+  width: auto;
+  vertical-align: middle;
+  filter: brightness(0) invert(1);
+  float: left;
+  margin: 0 15px;
+}
+
+.races-dropdown-container { 
+  position: absolute;
+  top: 80px;
+  /* Adjust based on your header height */
+  right: 0;
+  width: 180px;
+  border-top: 3px solid #222;
+  z-index: 1000;
+  /* Ensure it appears above others */
+  background-color: /*#d70909*/ #222;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+  overflow-y: scroll;
+}
+
+.races-dropdown-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.races-dropdown-container.open {
+  max-height: 500px;
+  /* big enough to fit full menu */
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.race-element {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  padding: 8px 2px;
+  line-height: initial;
+}
+
+.race-element img {
+  height: 16px;
+  width: 16px;
+  margin: 0 16px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.race-list {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.race-list.open {
+  max-height: 1000px;
+  /* Large enough to fit the content */
+  transition: max-height 0.5s ease-in;
+}
+
+.dropdown-bar { 
+  border-top: 3px solid #444;
+  border-bottom: 1px solid #333;
+  background-color: #222;
+  height: 50px;
+  line-height: 50px;
+  font-size: 12px;
+  padding-left: 2vw;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-img { 
+  width: 47px;
+  height: 47px;
+  margin: 0 10px;
+  float: left;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-img img { 
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.driver-name,
+.team-name { 
+  float: left;
+  width: 38vw;
+}
+
+.dropdown-arrow { 
+  width: 6vw
+}
+
+.dropdown:hover { 
+  /* Optional: Hover to show. Replace onClick logic. */
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown.open { 
+  opacity: 1;
+  visibility: visible;
+}
+
+.f1-explainer { 
+  display: flexbox;
+  align-items: center;
+  background-color: #222;
+}
+
+.f1-explainer audio { 
+  width: 50vw;
+  height: 50px;
+  margin: 20px;
+}
+
+.f1-explainer button { 
+  background-color: #d70909;
+  color: white;
+  border: none;
+  padding: 10px 12px;
+  width: 30vw;
+  box-sizing: border-box;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.before-explanation { 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.output-container { /*NOT OPTIMIZED*/
+  display: flex;
+  align-items: stretch;
+}
+
+.output-container div { /*NOT OPTIMIZED*/
+  width: 100%;
+  padding: 20px;
+  background-color: #333;
+  border-radius: 5px;
+  margin: 10px;
+  flex-direction: column;
+}
+
+.output-container p { /*NOT OPTIMIZED*/
+  font-family: F1reg;
+}
+
+h2 { 
+  text-decoration: underline;
+}
+
+.context-table { /*NOT OPTIMIZED*/
+  width: 80%;
+  margin: 15px 0 30px 10%;
+  text-align: center;
+  border-collapse: collapse;
+}
+
+.context-table tr { /*NOT OPTIMIZED*/
+  height: 40px;
+}
+
+.SOFT { 
+  color: #FF0000
+}
+
+.MEDIUM { 
+  color: #FFF200
+}
+
+.HARD { 
+  color: #FFFFFF
+}
+
+.INTERMEDIATE { 
+  color: #00A550
+}
+
+.WET { 
+  color: #0072C6
+}
+
+.race-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 30vw;
+  background-image: var(--bg-image);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 0.2;
+  z-index: -100;
+}
+
+#lap-form {margin-top: 30px;}
+
+#lap-form h2 {font-size: 18px;}
+
+.canvas-background {
+  width: 90vw;
+  padding: 5vw;
+  margin: 5vw;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background-color: #444;
+}
+
+.canvas-background i {
+  font-size: 10px;
+}
+
+.driver-comparison-table {
+  border: 2px solid #333;
+  border-collapse: collapse;
+  margin: auto;
+  margin-bottom: 60px;
+}
+
+.driver-comparison-table td {
+  border: 2px solid #333;
+  padding: 4px;
+  text-align: center;
+  font-size: 8px;
+}
+
+.lap-input, .speed-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 60%;
+  background-color: #333;
+  border: 0;
+  height: 6px;
+  margin: auto;
+  font-size: 40px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
+
+.lap-input::-webkit-slider-thumb, .speed-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px; /* Adjust thumb size */
+  height: 10px;
+  background: #fff; /* White thumb */
+  border-radius: 50%; /* Circle/round thumb */
+  cursor: pointer;
+}
+
+#driver-select-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap:wrap;
+  width: 90%;
+  margin-left: 5%;
+}
+
+.driver-select-element {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 30px;
+  width: 24.5%;
+  margin: 2px 0.25%;
+  border-radius: 6px;
+  font-size: 1.6vw;
+}
+
+.driver-select-element:active {
+  background-color: #333;
+  cursor: pointer;
+}
+
+.lap-submit:active {
+  background-color: #b60808;
+  cursor: pointer;
+}
+
+.driver-select-element img {
+  height: 100%;
+}
+
+.lap-submit {
+  background-color: #d70909;
+  margin: 30px auto;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 22px;
+}
+
+#warning {
+  margin: auto;
+  width: 60%;
+  background-color: #d70909;
+  padding: 30px 0;
+  border-radius: 14px;
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.index-body {
+  width: 80%;
+  margin: 40px auto;
+  font-weight: 100;
+  font-family: F1reg;
+  line-height: 1.4;
+  font-size: 12px;
+}
+
+.index-title { margin: 30px 0; font-family: F1; font-weight: 100; font-size:18px}
+
+.index-link {
+  color: white;
+  font-family: F1;
+  font-size: 2px;
+  font-weight: 600;
+  display: block;
+  height: 40px;
+  line-height: 40px;
+  animation-name: ANIM;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  width: fit-content;
+  margin-top: 30px;
+}
+
+@keyframes ANIM { 
+  0% { font-size: 17px}
+  50% { font-size: 18px}
+  100% { font-size: 17px}
+
+}
+
+.index-link:active {
+  color: #d70909;
+}
+
+.index-body h3 {
+  font-family: F1;
+  margin-top: 30px;
+}
+
+.index-body a {
+  color: white;
+}
