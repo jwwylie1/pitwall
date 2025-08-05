@@ -3,7 +3,11 @@ from peft import PeftModel
 import torch
 import os
 
-m_token = os.environ.get("mistral_token")
+m_token = os.environ.get("MISTRAL_TOKEN")
+if not m_token:
+    raise ValueError(
+        "MISTRAL_TOKEN is required. See README for setup instructions."
+    )
 
 quantization_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -22,7 +26,7 @@ base_model = AutoModelForCausalLM.from_pretrained(
     trust_remote_code=True
 )
 
-model = PeftModel.from_pretrained(base_model, "jwwylie1/f1-explainer-adapter")
+model = PeftModel.from_pretrained(base_model, "./models/")
 
 tokenizer = AutoTokenizer.from_pretrained(
     "mistralai/Mistral-7B-Instruct-v0.2",

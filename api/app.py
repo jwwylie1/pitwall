@@ -25,12 +25,6 @@ model = WhisperModel("small.en", compute_type="int8", device="cpu")
 
 
 app = FastAPI(title="Pitwall", version="1.0.0")
-HF_API_URL = "https://api-inference.huggingface.co/models/jwwylie1/f1-explainer-adapter"
-HF_API_TOKEN = os.environ.get("HF_API_TOKEN")
-
-headers = {
-    "Authorization": f"Bearer {HF_API_TOKEN}",
-}
 
 app.add_middleware(
     CORSMiddleware,
@@ -109,4 +103,4 @@ async def generate_response(prompt: Prompt):
     return {"response": {'transcription': result, 'explanation': response, 'context': info, 'prompt': new_string}}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

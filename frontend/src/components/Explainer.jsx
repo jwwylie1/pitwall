@@ -14,7 +14,6 @@ function F1Explainer({message}) {
   const generate = async () => {
     setLoading(true);
     try {
-              console.log('Sending to proxy:', message);
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
