@@ -1,19 +1,21 @@
 # 🏁 Pitwall
 
-A full-stack Formula 1 radio message transcription and explanation application. Pitwall uses AI to transcribe F1 team radio communications and translate technical jargon into understandable explanations for fans.
+A full-stack Formula 1 race review application. Pitwall uses AI to transcribe F1 team radio communications and translate technical jargon into understandable explanations for fans. The Lap Visualization Tool also replays any lap frmo any race using real-time telemetry.
 
 ## ✨ Features
 
 - **Audio Transcription**: Converts F1 radio messages to text using faster-whisper
 - **Technical Translation**: Explains F1 terminology and technical concepts in plain language using a fine-tuned Mistral model
+- **Lap Visualization**: Replays selected drivers' laps using multiple telemetry points each second
 - **Modern Interface**: Clean React frontend for easy interaction
-- **Real-time Processing**: FastAPI backend for fast audio processing
 
 ---
 
 ## 🚀 Getting Started
 
-These instructions will help you get the project running locally on your machine.
+These instructions will help you get the project running locally on your machine.<br/>
+Alternatively, check out https://f1-pitwall.vercel.app to see an online version.
+> Note: The radio explainer tool does not work online as the AI is not hosted remotely.
 
 ### ✅ Prerequisites
 
@@ -37,7 +39,7 @@ Ensure you have the following installed:
 ### 💻 System Requirements
 
 - **RAM**: 8GB+ recommended (AI models are memory-intensive)
-- **Storage**: 2GB+ free space for model downloads
+- **Storage**: 14GB+ free space for model downloads
 - **GPU**: Optional but recommended for faster transcription
 
 > **macOS Users**: Use Terminal and Homebrew (`brew install python node`) to install dependencies.  
