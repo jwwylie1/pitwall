@@ -1,3 +1,6 @@
+import os
+#os.environ["MISTRAL_TOKEN"] = "YOUR TOKEN HERE"
+
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from typing import Optional
@@ -11,12 +14,13 @@ import pandas as pd
 import predictor
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import os
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi import Request
 from fastapi.exception_handlers import request_validation_exception_handler
+
+
 
 SESSION_KEY = 9928
 #model = whisper.load_model("large-v3-turbo")

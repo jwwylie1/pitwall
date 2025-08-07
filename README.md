@@ -33,8 +33,9 @@ Ensure you have the following installed:
 
 1. Create a free account at https://huggingface.co/
 2. Go to https://huggingface.co/settings/tokens
-3. Create a new token with "Read" permissions and copy it
+3. Create a new token with "Read" permissions and copy it for later
 4. Accept the Mistral model license at https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
+5. (Optional: can do later) Open *api/app.py* and enter your token on line 2, removing the **#** to uncomment the line
 
 ### 💻 System Requirements
 
@@ -63,8 +64,11 @@ cd api
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+
+# Only if you did not do step 5 on Hugging Face Auth
 export MISTRAL_TOKEN=hf_YOUR_TOKEN_HERE
 ```
+
 
 ### Start the Backend
 
@@ -82,7 +86,7 @@ cd api
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-set MISTRAL_TOKEN=hf_YOUR_TOKEN_HERE
+set MISTRAL_TOKEN=hf_YOUR_TOKEN_HERE # only if needed; see above
 uvicorn app:app --reload --port 8000
 ```
 

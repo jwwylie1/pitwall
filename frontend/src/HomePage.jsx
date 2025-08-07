@@ -39,7 +39,7 @@ function HomePage({ sessionKey, setSessionKey}) {
       date and driver. Finally, the transcription alongside its context is given to a <a
        href="https://mistral.ai/" target="_blank">Mistral LLM</a> that has been 
       fine-tuned via <a href="https://huggingface.co/">HuggingFace</a> based on roughly 
-      1,000 radio messages and explanations from the 2023 season. The resulting explanation, 
+      600 radio messages and explanations from the 2023 season. The resulting explanation, 
       initial transcription, and relevant context are all returned back to the front end 
       and shown to the user.
       <br/>
