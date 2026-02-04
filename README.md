@@ -9,6 +9,10 @@ A full-stack Formula 1 race review application. Pitwall uses AI to transcribe F1
 - **Lap Visualization**: Replays selected drivers' laps using multiple telemetry points each second
 - **Modern Interface**: Clean React frontend for easy interaction
 
+[![Transcription and Translation Demo](frontend/public/assets/backgrounds/thumbnail1.jpg)](https://www.youtube.com/watch?v=wUeZxVRsYgc)
+
+[![Lap Visualizer Demo](frontend/public/assets/backgrounds/thumbnail2.jpg)](https://www.youtube.com/watch?v=xK3q3_lUqCE)
+
 ---
 
 ## 🚀 Getting Started
