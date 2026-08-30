@@ -49,6 +49,9 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
     const fetchData = async () => {
 
       const driversRes = await fetch(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`);
+      if (!driversRes.ok) {
+          throw new Error(`HTTP error! Status: ${driversRes.status}`);
+      }
       const driversData = await driversRes.json()
 
       setDriversList(driversData)
