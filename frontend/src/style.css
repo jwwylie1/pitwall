@@ -420,10 +420,10 @@ h2 {
   background-color: #d70909;
   height: 200px;
   border-radius: 14px;
-  visibility: hidden;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
+  line-height: 200px;
   font-size: 22px;
 }
 

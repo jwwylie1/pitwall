@@ -18,6 +18,7 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
   const [maxLap, setMaxLap] = useState('N/A');
   const [speedMult, setSpeedMult] = useState(1)
   const [showCanvas, setShowCanvas] = useState(false);
+  const [submittedInfo, setSubmittedInfo] = useState({drivers: [], lap: null});
 
   // Bumped on each submit so <Canvas> remounts and refetches for the new selection.
   const [runId, setRunId] = useState(0);
@@ -28,9 +29,13 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
   }
 
   const handleDriversChange = (selected) => {
-    let newDrivers = []
-    newDrivers[0] = drivers[1];
-    newDrivers[1] = selected;
+    let newDrivers = [...drivers, selected];
+    if (newDrivers.length == 3) {
+      newDrivers.shift();
+    }
+    if (newDrivers.length === 2 && newDrivers[0] === newDrivers[1]) {
+      newDrivers.shift();
+    }
     setDrivers(newDrivers)
   }
 
@@ -40,8 +45,14 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
   }
 
   const handleSubmit = () => {
+    if (drivers.length !== 2) {
+      alert("Please select 2 drivers");
+      return;
+    }
+
     setShowCanvas(true)
     setRunId(prev => prev + 1);
+    setSubmittedInfo({drivers: drivers, lap: lap});
   }
 
   useEffect(() => {
@@ -82,7 +93,7 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
       <form id="lap-form" style={{ textAlign: 'center' }} onSubmit={(event) => {event.preventDefault(); handleSubmit()}}>
         <h2 style={{ textDecoration: 'none' }} id="lap-header">Selected Lap - 25</h2>
 
-        <input type="range" value={lap} onChange={handleLapChange} min='2' max={maxLap} 
+        <input type="range" value={lap} onChange={handleLapChange} min='2' max={maxLap-1} 
         step='1' className="lap-input white f1 center"></input>
 
         <h2 style={{ textDecoration: 'none' }}>Select 2 Drivers</h2>
@@ -98,8 +109,8 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
 
       <div id='warning' className='center'>WARNING</div>
 
-      {showCanvas && <Canvas key={runId} race={race} driver1={drivers[0]} driver2={drivers[1]} 
-      lap={lap} speed={speedMult} id="vis-canvas"/>}
+      {showCanvas && <Canvas key={runId} race={race} driver1={submittedInfo.drivers[0]} 
+      driver2={submittedInfo.drivers[1]} lap={submittedInfo.lap} speedMultiplier={speedMult} id="vis-canvas"/>}
     </>
   )
 }

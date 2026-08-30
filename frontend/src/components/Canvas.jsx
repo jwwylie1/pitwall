@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 
-const SPEED_MULT = 1;
-const REQ_GAP_MS = 500;
+const LINE_OFFSET = 1;
+const DRS_NUMS = new Set([10, 12, 14]);
+const REQ_GAP_MS = 250;
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-function Canvas({ race, driver1, driver2, lap, speed }) {
+function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   const canvasRef = useRef(null);
   const [canvasSize, setCanvasSize] = useState([]);
   const [image, setImage] = useState(null);
@@ -49,9 +50,8 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
         console.warn(`No element found after lap_number: ${lap}. Cannot set d1Laps[1].`);
       }
     } else {
-      document.getElementById('warning').style.visibility = 'visible'
-      document.getElementById('warning').innerText = `${driver.last_name} did not complete lap ${lap}.
-      Please refresh the page and try again.`
+      document.getElementById('warning').style.display = 'flex'
+      document.getElementById('warning').innerText = `${driver.last_name} did not complete lap ${lap}.`
     }
   }
 
@@ -76,16 +76,17 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
       const driver1LapsRes = await fetch(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver1.driver_number}`);
       const driver1Laps = await driver1LapsRes.json();
 
+      await sleep(REQ_GAP_MS);
+
       const driver2LapsRes = await fetch(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver2.driver_number}`);
       const driver2Laps = await driver2LapsRes.json();
 
-      sleep(REQ_GAP_MS);
+      await sleep(REQ_GAP_MS);
 
       const d1laps = startAndEndOfLaps(driver1, driver1Laps, lap)
       const d2laps = startAndEndOfLaps(driver2, driver2Laps, lap)
 
-      setDriver1LapTime(d1laps)
-      setDriver2LapTime(d2laps)
+      if (!d1laps || !d2laps) {return;}
 
       fetchData(d1laps, d2laps);
 
@@ -98,21 +99,21 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
       );
       const car1Location = await car1LocRes.json();
       
-      sleep(REQ_GAP_MS);
+      await sleep(REQ_GAP_MS);
 
       const car2LocRes = await fetch(
         `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
       );
       const car2Location = await car2LocRes.json();
 
-      sleep(REQ_GAP_MS);
+      await sleep(REQ_GAP_MS);
 
       const car1DataRes = await fetch(
         `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver1.driver_number}&date%3E${driver1Times[0]}&date%3C${driver1Times[1]}`
       );
       const car1Data = await car1DataRes.json();
 
-      sleep(REQ_GAP_MS);
+      await sleep(REQ_GAP_MS);
 
       const car2DataRes = await fetch(
         `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
@@ -125,6 +126,8 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
       setCar2Data(car2Data);
 
     };
+    // remove any previous warnings
+    document.getElementById('warning').style.display = 'none'
     fetchLapTimes();
 
     document.getElementsByClassName('canvas-background')[0].scrollIntoView()
@@ -179,7 +182,7 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
 
         const interval = setInterval(() => {
           const elapsedTime = Date.now() - playbackStart.current;
-          setCurrentTime(elapsedTime*speed);
+          setCurrentTime(elapsedTime*speedMultiplier);
         }, 50);
 
         return () => clearInterval(interval);
@@ -214,7 +217,7 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
         speed: prevData.speed + car1Data[dataIndex1]?.speed,
         throttle: prevData.throttle + car1Data[dataIndex1]?.throttle,
         brake: prevData.brake + car1Data[dataIndex1]?.brake,
-        drs: prevData.drs + 100*(car1Data[dataIndex1]?.drs == 10 || car1Data[dataIndex1]?.drs == 12 || car1Data[dataIndex1]?.drs == 14),
+        drs: prevData.drs + 100*(DRS_NUMS.has(car1Data[dataIndex1]?.drs)),
         gear: prevData.gear + car1Data[dataIndex1]?.n_gear,
         rpm: prevData.rpm + car1Data[dataIndex1]?.rpm,
       }));
@@ -226,7 +229,7 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
         speed: prevData.speed + car2Data[dataIndex2]?.speed,
         throttle: prevData.throttle + car2Data[dataIndex2]?.throttle,
         brake: prevData.brake + car2Data[dataIndex2]?.brake,
-        drs: prevData.drs + 100*(car2Data[dataIndex2]?.drs == 10 || car2Data[dataIndex2]?.drs == 12 || car2Data[dataIndex2]?.drs == 14),
+        drs: prevData.drs + 100*(DRS_NUMS.has(car2Data[dataIndex2]?.drs)),
         gear: prevData.gear + car2Data[dataIndex2]?.n_gear,
         rpm: prevData.rpm + car2Data[dataIndex2]?.rpm,
       }));
@@ -246,8 +249,8 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
       race.flip
     );
 
-    newCoords1.x -= 1;
-    newCoords1.y -= 1;
+    newCoords1.x -= LINE_OFFSET;
+    newCoords1.y -= LINE_OFFSET;
 
     if (driver1pos.x != 0 && driver1pos.y != 0) {
       ctx.beginPath(); // Start a new path
@@ -275,8 +278,8 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
       race.flip
     );
 
-    newCoords2.x += 1;
-    newCoords2.y += 1;
+    newCoords2.x += LINE_OFFSET;
+    newCoords2.y += LINE_OFFSET;
 
     if (driver2pos.x != 0 && driver2pos.y != 0) {
       ctx.beginPath(); // Start a new path
@@ -353,8 +356,7 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
               {(car1AvgData.brake/dataIndex1).toFixed(2)}
             </td>
 
-            <td style={{ color: car1Data?.[dataIndex1]?.drs === 10 || 
-              car1Data?.[dataIndex1]?.drs === 12 || car1Data?.[dataIndex1]?.drs === 14 ? 'lime' : '#111' }}>
+            <td style={{ color: DRS_NUMS.has(car1Data?.[dataIndex1]?.drs) ? 'lime' : '#111' }}>
               DRS
             </td>
             <td style={{ color: `rgb(17, ${Math.floor((car1AvgData.drs/dataIndex1 / 30) * 255)}, 
@@ -393,8 +395,7 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
               {(car2AvgData.brake/dataIndex2).toFixed(2)}
             </td>
 
-            <td style={{ color: car2Data?.[dataIndex2]?.drs === 10 || 
-              car2Data?.[dataIndex2]?.drs === 12 || car2Data?.[dataIndex2]?.drs === 14 ? 'lime' : '#111' }}>
+            <td style={{ color: DRS_NUMS.has(car2Data?.[dataIndex2]?.drs) ? 'lime' : '#111' }}>
               DRS
             </td>
             <td style={{ color: `rgb(17, ${Math.floor((car2AvgData.drs/dataIndex2 / 30) * 255)}, 
