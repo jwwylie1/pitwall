@@ -77,7 +77,7 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
   return (
     <>
       <Header sessionKey={sessionKey} setSessionKey={setSessionKey} title="Lap Visualization Tool"/>
-      <RaceHeader sessionKey={sessionKey}/>
+      <RaceHeader meeting={meeting} />
       <form id="lap-form" style={{ textAlign: 'center' }} onSubmit={(event) => {event.preventDefault(); handleSubmit()}}>
         <h2 style={{ textDecoration: 'none' }} id="lap-header">Selected Lap - 25</h2>
 

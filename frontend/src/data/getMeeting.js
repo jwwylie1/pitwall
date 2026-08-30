@@ -1,5 +1,4 @@
 const fetchSession = async (sessionKey) => {
-    try {
         const res = await fetch(
             `https://api.openf1.org/v1/sessions?session_key=${sessionKey}`
         );
@@ -9,10 +8,6 @@ const fetchSession = async (sessionKey) => {
 
         const data = await res.json();
         return data[0].meeting_key
-    } catch (error) {
-        console.error('Error fetching messages:', error);
-        // Handle the error appropriately, possibly set an error state
-    }
 };
 
 const getMeeting = async (sessionKey) => {
