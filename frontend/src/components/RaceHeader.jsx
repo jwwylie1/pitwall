@@ -12,7 +12,7 @@ function RaceHeader({ meeting: providedMeeting, sessionKey }) {
       setFetchedMeeting(meeting);
     };
 
-    fetchMeetings(sessionKey) // only runs if not provided
+    fetchMeetings() // only runs if not provided
     
   }, [providedMeeting, sessionKey]);
 

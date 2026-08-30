@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import Header from './components/Header.jsx'
 import RaceHeader from './components/RaceHeader.jsx'
 import Canvas from './components/Canvas.jsx'
@@ -11,7 +11,6 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
 
   const [driversList, setDriversList] = useState([]);
   const [drivers, setDrivers] = useState([]);
-  const [session, setSession] = useState(null);
   const [meeting, setMeeting] = useState(null);
   const [race, setRace] = useState(null)
   const [lap, setLap] = useState(25);
@@ -69,7 +68,7 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
       setDriversList(driversData)
     }
 
-    const fetchMeetings = async (key) => {
+    const fetchMeetings = async () => {
       const meeting = await getMeeting(sessionKey)
       setMeeting(meeting);
       const racesInYear = races[meeting?.year];
@@ -81,7 +80,7 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
 
     if (sessionKey) {
       fetchData()
-      fetchMeetings(sessionKey)
+      fetchMeetings()
     }
 
   }, [sessionKey])

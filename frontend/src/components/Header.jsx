@@ -11,7 +11,7 @@ function Header({sessionKey, setSessionKey, title, showChange=true}) {
 
         </Link>
         {title}
-        {showChange && <RaceSelectDropdown sessionKey={sessionKey} setSessionKey={setSessionKey}/>}
+        {showChange && <RaceSelectDropdown setSessionKey={setSessionKey}/>}
     </div>
   );
 };

@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
+import LiveRow from './LiveRow';
+import { LINE_OFFSET, REQ_GAP_MS, DRS_NUMS, POLL_INTERVAL_MS } from '../data/constants';
 
-const LINE_OFFSET = 1;
-const DRS_NUMS = new Set([10, 12, 14]);
-const REQ_GAP_MS = 250;
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   const canvasRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [canvasSize, setCanvasSize] = useState([]);
   const [image, setImage] = useState(null);
   const [driver1pos, setDriver1pos] = useState({ x: 0, y: 0 });
@@ -26,6 +26,14 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   const playbackStart = useRef(null);
   const startTime1 = useRef(null);
   const startTime2 = useRef(null);
+
+  const fetchJsonData = async (url) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`OpenF1 request failed: ${res.status}`);
+    }
+    return res.json();
+  }
 
   function startAndEndOfLaps(driver, laps, lap) {
     // Find the driver1Laps element with matching lap_number
@@ -72,58 +80,61 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
 
   useEffect(() => {
     const fetchLapTimes = async () => {
-      // fetch lap times sequentially; concurrent hits rate limit
-      const driver1LapsRes = await fetch(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver1.driver_number}`);
-      const driver1Laps = await driver1LapsRes.json();
+      try {
+        // fetch lap times sequentially; concurrent hits rate limit
+        const driver1Laps = await fetchJsonData(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver1.driver_number}`);
 
-      await sleep(REQ_GAP_MS);
+        await sleep(REQ_GAP_MS);
 
-      const driver2LapsRes = await fetch(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver2.driver_number}`);
-      const driver2Laps = await driver2LapsRes.json();
+        const driver2Laps = await fetchJsonData(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver2.driver_number}`);
 
-      await sleep(REQ_GAP_MS);
+        await sleep(REQ_GAP_MS);
 
-      const d1laps = startAndEndOfLaps(driver1, driver1Laps, lap)
-      const d2laps = startAndEndOfLaps(driver2, driver2Laps, lap)
+        const d1laps = startAndEndOfLaps(driver1, driver1Laps, lap)
+        const d2laps = startAndEndOfLaps(driver2, driver2Laps, lap)
 
-      if (!d1laps || !d2laps) {return;}
+        if (!d1laps || !d2laps) {setIsLoading(false); return;}
 
-      fetchData(d1laps, d2laps);
+        // awaited so a failure inside fetchData reaches the catch below
+        await fetchData(d1laps, d2laps);
+      } catch (error) {
+        console.error('Error fetching lap data:', error);
+        setIsLoading(false);
+        document.getElementById('warning').style.display = 'flex'
+        document.getElementById('warning').innerText = `Could not load lap data. Please try again.`
+      }
 
     }
 
     const fetchData = async (driver1Times, driver2Times) => {
       // fetch data sequentially; concurrent hits rate limit
-      const car1LocRes = await fetch(
+      const car1Location = await fetchJsonData(
         `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver1.driver_number}&date%3E${driver1Times[0]}&date%3C${driver1Times[1]}`
       );
-      const car1Location = await car1LocRes.json();
       
       await sleep(REQ_GAP_MS);
 
-      const car2LocRes = await fetch(
+      const car2Location = await fetchJsonData(
         `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
       );
-      const car2Location = await car2LocRes.json();
 
       await sleep(REQ_GAP_MS);
 
-      const car1DataRes = await fetch(
+      const car1Data = await fetchJsonData(
         `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver1.driver_number}&date%3E${driver1Times[0]}&date%3C${driver1Times[1]}`
       );
-      const car1Data = await car1DataRes.json();
 
       await sleep(REQ_GAP_MS);
 
-      const car2DataRes = await fetch(
+      const car2Data = await fetchJsonData(
         `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
       );
-      const car2Data = await car2DataRes.json();
 
       setCar1Location(car1Location);
       setCar2Location(car2Location);
       setCar1Data(car1Data);
       setCar2Data(car2Data);
+      setIsLoading(false);
 
     };
     // remove any previous warnings
@@ -183,7 +194,7 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
         const interval = setInterval(() => {
           const elapsedTime = Date.now() - playbackStart.current;
           setCurrentTime(elapsedTime*speedMultiplier);
-        }, 50);
+        }, POLL_INTERVAL_MS);
 
         return () => clearInterval(interval);
       };
@@ -296,6 +307,14 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
     setImage(canvas.toDataURL());
   };
 
+  if (isLoading) {
+    return (
+      <div className="canvas-background">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="canvas-background">
@@ -330,83 +349,9 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
             <td>AVG</td>
           </tr>
 
-          <tr>
-            <td style={{ color: `#${driver1.team_colour}`}}>{driver1.full_name}</td>
-            <td style={{ opacity: car1Data?.[dataIndex1]?.speed / 200}}>
-              {car1Data?.[dataIndex1]?.speed}
-            </td>
-            <td style={{ opacity: car1Data?.[dataIndex1]?.speed / 200}}>
-              {(car1AvgData.speed/dataIndex1).toFixed(2)}
-            </td>
+          <LiveRow driver={driver1} data={car1Data} avgData={car1AvgData} dataIdx={dataIndex1} />
+          <LiveRow driver={driver2} data={car2Data} avgData={car2AvgData} dataIdx={dataIndex2} />
 
-            <td style={{ color: `rgb(17, 
-              ${Math.floor((car1Data?.[dataIndex1]?.throttle / 100) * 255)}, 17)` }}>
-              {car1Data?.[dataIndex1]?.throttle}
-            </td>
-            <td style={{ color: `rgb(17, 
-              ${Math.floor((car1AvgData.throttle/dataIndex1 / 100) * 255)}, 17)` }}>
-              {(car1AvgData.throttle/dataIndex1).toFixed(2)}
-            </td>
-
-            <td style={{ color: car1Data?.[dataIndex1]?.brake === 0 ? '#111' : 'red' }}>
-              BRAKE
-            </td>
-            <td style={{ color: `rgb(${Math.floor((car1AvgData.brake/dataIndex1 / 30) * 255)}, 
-              17, 17)` }}>
-              {(car1AvgData.brake/dataIndex1).toFixed(2)}
-            </td>
-
-            <td style={{ color: DRS_NUMS.has(car1Data?.[dataIndex1]?.drs) ? 'lime' : '#111' }}>
-              DRS
-            </td>
-            <td style={{ color: `rgb(17, ${Math.floor((car1AvgData.drs/dataIndex1 / 30) * 255)}, 
-              17)` }}>
-              {(car1AvgData.drs/dataIndex1).toFixed(2)}
-            </td>
-
-            <td>{car1Data?.[dataIndex1]?.n_gear}</td>
-            <td>{(car1AvgData.gear/dataIndex1).toFixed(2)}</td>
-            {/*<td>{car1Data?.[dataIndex1]?.rpm}</td> */}
-          </tr>
-
-          <tr>
-            <td style={{ color: `#${driver2.team_colour}`}}>{driver2.full_name}</td>
-            <td style={{ opacity: car2Data?.[dataIndex2]?.speed / 200}}>
-              {car2Data?.[dataIndex2]?.speed}
-            </td>
-            <td style={{ opacity: car2Data?.[dataIndex2]?.speed / 200}}>
-              {(car2AvgData.speed/dataIndex2).toFixed(2)}
-            </td>
-
-            <td style={{ color: `rgb(17, 
-              ${Math.floor((car2Data?.[dataIndex2]?.throttle / 100) * 255)}, 17)` }}>
-              {car2Data?.[dataIndex2]?.throttle}
-            </td>
-            <td style={{ color: `rgb(17, 
-              ${Math.floor((car2AvgData.throttle/dataIndex2 / 100) * 255)}, 17)` }}>
-              {(car2AvgData.throttle/dataIndex2).toFixed(2)}
-            </td>
-
-            <td style={{ color: car2Data?.[dataIndex2]?.brake === 0 ? '#111' : 'red' }}>
-              BRAKE
-            </td>
-            <td style={{ color: `rgb(${Math.floor((car2AvgData.brake/dataIndex2 / 30) * 255)}, 
-              17, 17)` }}>
-              {(car2AvgData.brake/dataIndex2).toFixed(2)}
-            </td>
-
-            <td style={{ color: DRS_NUMS.has(car2Data?.[dataIndex2]?.drs) ? 'lime' : '#111' }}>
-              DRS
-            </td>
-            <td style={{ color: `rgb(17, ${Math.floor((car2AvgData.drs/dataIndex2 / 30) * 255)}, 
-              17)` }}>
-              {(car2AvgData.drs/dataIndex2).toFixed(2)}
-            </td>
-
-            <td>{car2Data?.[dataIndex2]?.n_gear}</td>
-            <td>{(car2AvgData.gear/dataIndex2).toFixed(2)}</td>
-{/*             <td>{currentTime.toString().slice(-6,-3)}:{currentTime.toString().slice(-3,-2)}</td>
- */}         </tr>
         </tbody>
       </table>
 

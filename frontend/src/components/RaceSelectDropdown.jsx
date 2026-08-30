@@ -4,7 +4,7 @@ import races from '../data/races.js'
 /* import selectRace from '../data/selectRace.js'
  */
 
-function RaceSelectDropdown({ sessionKey, setSessionKey }) {
+function RaceSelectDropdown({ setSessionKey }) {
 
 	const selectRace = (race) => {
 		setSessionKey(race.session_key)
@@ -31,7 +31,7 @@ function RaceSelectDropdown({ sessionKey, setSessionKey }) {
 			<div className={`races-dropdown-container w100 ${dropdownOpen ? 'open' : ''}`}>
 				{Object.entries(races)
 					.sort((a, b) => b[0] - a[0]) // Sort by year descending
-					.map(([year, raceList], index) => {
+					.map(([year, raceList]) => {
 						return (
 							<div key={year}>
 								<div className='race-element' onClick={() => toggleYear(year)}>
@@ -39,9 +39,9 @@ function RaceSelectDropdown({ sessionKey, setSessionKey }) {
 									<i className={`bi ${openYears[year] ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
 								</div>
 								<div className={`race-list ${openYears[year] ? 'open' : ''}`}>
-									{raceList.map((race, index2) => {
+									{raceList.map((race) => {
 										return (
-											<div className='race-element' key={index2} onClick={() => selectRace(race)}>
+											<div className='race-element' key={race.session_key} onClick={() => selectRace(race)}>
 												
 												<img src={'/assets/flags/' + race.name + '.png'}></img>
 												{race.name}

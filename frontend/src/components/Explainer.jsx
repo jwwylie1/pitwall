@@ -7,7 +7,6 @@ function F1Explainer({message}) {
 
   const API_BASE_URL = 'https://huggingface.co/spaces/jwwylie1/pitwall-ai';
 
-  const [inputText, setInputText] = useState('');
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
 
