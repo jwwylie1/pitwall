@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 
 const SPEED_MULT = 1;
+const REQ_GAP_MS = 500;
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 function Canvas({ race, driver1, driver2, lap, speed }) {
   const canvasRef = useRef(null);
@@ -14,8 +16,6 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
   const [car2Data, setCar2Data] = useState(null);
   const [car1AvgData, setCar1AvgData] = useState({speed:0, throttle:0, brake:0, drs:0, gear:0, rpm:0})
   const [car2AvgData, setCar2AvgData] = useState({speed:0, throttle:0, brake:0, drs:0, gear:0, rpm:0})
-  const [driver1LapTime, setDriver1LapTime] = useState([])
-  const [driver2LapTime, setDriver2LapTime] = useState([])
   const [frameIndex1, setFrameIndex1] = useState(0);
   const [frameIndex2, setFrameIndex2] = useState(0);
   const [dataIndex1, setDataIndex1] = useState(0);
@@ -28,11 +28,7 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
 
   function startAndEndOfLaps(driver, laps, lap) {
     // Find the driver1Laps element with matching lap_number
-    let times = []
-    console.log(laps)
-    console.log(lap)
     const matchingDriverLapIndex = laps.findIndex(item => item.lap_number === Number(lap));
-    console.log(matchingDriverLapIndex)
   
     // Check if a matching lap was found.
     if (matchingDriverLapIndex !== -1) {
@@ -76,14 +72,14 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
 
   useEffect(() => {
     const fetchLapTimes = async () => {
-      const [driver1LapsRes, driver2LapsRes] = await Promise.all([
-        fetch(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver1.driver_number}`),
-        fetch(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver2.driver_number}`)
-      ]);
-      const [driver1Laps, driver2Laps] = await Promise.all([
-        driver1LapsRes.json(),
-        driver2LapsRes.json()
-      ]);
+      // fetch lap times sequentially; concurrent hits rate limit
+      const driver1LapsRes = await fetch(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver1.driver_number}`);
+      const driver1Laps = await driver1LapsRes.json();
+
+      const driver2LapsRes = await fetch(`https://api.openf1.org/v1/laps?session_key=${race.session_key}&driver_number=${driver2.driver_number}`);
+      const driver2Laps = await driver2LapsRes.json();
+
+      sleep(REQ_GAP_MS);
 
       const d1laps = startAndEndOfLaps(driver1, driver1Laps, lap)
       const d2laps = startAndEndOfLaps(driver2, driver2Laps, lap)
@@ -96,27 +92,32 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
     }
 
     const fetchData = async (driver1Times, driver2Times) => {
-      console.log(driver1LapTime, driver2LapTime)
-      const [car1LocRes, car2LocRes, car1DataRes, car2DataRes] = await Promise.all([
-        fetch(
-          `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver1.driver_number}&date%3E${driver1Times[0]}&date%3C${driver1Times[1]}`
-        ),
-        fetch(
-          `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
-        ),
-        fetch (
-          `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver1.driver_number}&date%3E${driver1Times[0]}&date%3C${driver1Times[1]}`,
-        ),
-        fetch(
-          `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
-        )
-      ]);
-      const [car1Location, car2Location, car1Data, car2Data] = await Promise.all([
-        car1LocRes.json(),
-        car2LocRes.json(),
-        car1DataRes.json(),
-        car2DataRes.json(),
-      ]);
+      // fetch data sequentially; concurrent hits rate limit
+      const car1LocRes = await fetch(
+        `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver1.driver_number}&date%3E${driver1Times[0]}&date%3C${driver1Times[1]}`
+      );
+      const car1Location = await car1LocRes.json();
+      
+      sleep(REQ_GAP_MS);
+
+      const car2LocRes = await fetch(
+        `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
+      );
+      const car2Location = await car2LocRes.json();
+
+      sleep(REQ_GAP_MS);
+
+      const car1DataRes = await fetch(
+        `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver1.driver_number}&date%3E${driver1Times[0]}&date%3C${driver1Times[1]}`
+      );
+      const car1Data = await car1DataRes.json();
+
+      sleep(REQ_GAP_MS);
+
+      const car2DataRes = await fetch(
+        `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
+      );
+      const car2Data = await car2DataRes.json();
 
       setCar1Location(car1Location);
       setCar2Location(car2Location);
@@ -352,7 +353,7 @@ function Canvas({ race, driver1, driver2, lap, speed }) {
               {(car1AvgData.brake/dataIndex1).toFixed(2)}
             </td>
 
-            <td style={{ color: car1Data?.[dataIndex1]?.drs === 12 || 
+            <td style={{ color: car1Data?.[dataIndex1]?.drs === 10 || 
               car1Data?.[dataIndex1]?.drs === 12 || car1Data?.[dataIndex1]?.drs === 14 ? 'lime' : '#111' }}>
               DRS
             </td>

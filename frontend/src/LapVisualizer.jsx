@@ -19,7 +19,8 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
   const [speedMult, setSpeedMult] = useState(1)
   const [showCanvas, setShowCanvas] = useState(false);
 
-  let [thing, setThing] = useState(0);
+  // Bumped on each submit so <Canvas> remounts and refetches for the new selection.
+  const [runId, setRunId] = useState(0);
 
   const handleLapChange = (event) => {
     document.getElementById('lap-header').innerText = "Selected Lap - " + event.target.value;
@@ -40,7 +41,7 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
 
   const handleSubmit = () => {
     setShowCanvas(true)
-    setThing(lap);
+    setRunId(prev => prev + 1);
   }
 
   useEffect(() => {
@@ -97,7 +98,7 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
 
       <div id='warning' className='center'>WARNING</div>
 
-      {showCanvas && <Canvas race={race} driver1={drivers[0]} driver2={drivers[1]} 
+      {showCanvas && <Canvas key={runId} race={race} driver1={drivers[0]} driver2={drivers[1]} 
       lap={lap} speed={speedMult} id="vis-canvas"/>}
     </>
   )
