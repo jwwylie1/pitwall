@@ -18,8 +18,32 @@ function HomePage({ sessionKey, setSessionKey}) {
     <div className='index-body'>
 
       <h1 className="index-title center">Pitwall gives Formula One fans a unique perspective as they look back on a race.</h1>
-      <Link to="/radio-explainer" className='index-link'>Radio Explainer</Link>
+      <Link to="/lap-visualizer" className='index-link'>Lap Visualizer</Link>
       <br/>
+      In Formula One, fractions of seconds in throttle timing, braking points, and gear
+      shifting is the difference between backmarkers and champions. A small deviation
+      from the racing line can be the difference between pole position and exiting in
+      Q3. The lap visualization tool allows users to track both in real time. After
+      selecting two drivers and a lap, colored lines will begin tracing their actual 
+      paths around the track while also displaying a variety of live telemetry data.
+
+      <h3>Technical Details</h3>
+
+      When a race is selected, the active drivers are pulled from OpenF1. These drivers
+      are shown to the user, and plain JavaScript allows users to toggle between which
+      drivers they select. When two drivers and a valid lap are submitted, a canvas with 
+      the selected track outline is placed on the screen. Telemetry and location data
+      are then obtained from OpenF1. As the data is parsed through with an internal
+      clock, the canvas element is drawn on from its previous location to new, while the
+      telemetry table is updated with both live and average values.
+      <br/>
+
+      <Link to="/radio-explainer" className='index-link'>Radio Explainer*</Link>
+      <br/>
+      <i>*Transcription and explanation with AI are unfortunately only available
+        through the GitHub repository due to the model being too large to host online.
+      </i>
+      <br/><br/>
       Drivers and their teams are in constant communication with each other. Strategy, 
       celebration, and frustration run through the headsets all race. This tool allows
       users to review some of the messages they may have missed throughout the broadcast.
@@ -43,26 +67,8 @@ function HomePage({ sessionKey, setSessionKey}) {
       initial transcription, and relevant context are all returned back to the front end 
       and shown to the user.
       <br/>
-      <Link to="/lap-visualizer" className='index-link'>Lap Visualizer</Link>
-      <br/>
-      In Formula One, fractions of seconds in throttle timing, braking points, and gear
-      shifting is the difference between backmarkers and champions. A small deviation
-      from the racing line can be the difference between pole position and exiting in
-      Q3. The lap visualization tool allows users to track both in real time. After
-      selecting two drivers and a lap, colored lines will begin tracing their actual 
-      paths around the track while also displaying a variety of live telemetry data.
 
-      <h3>Technical Details</h3>
-
-      When a race is selected, the active drivers are pulled from OpenF1. These drivers
-      are shown to the user, and plain JavaScript allows users to toggle between which
-      drivers they select. When two drivers and a valid lap are submitted, a canvas with 
-      the selected track outline is placed on the screen. Telemetry and location data
-      are then obtained from OpenF1. As the data is parsed through with an internal
-      clock, the canvas element is drawn on from its previous location to new, while the
-      telemetry table is updated with both live and average values.
-
-      <h2 className="center index-title"><a href="https://github.com/jwwylie1/pitwall-ai"
+      <h2 className="center index-title"><a href="https://github.com/jwwylie1/pitwall"
       target="_blank">Pitwall Github</a></h2>
     </div>
     </>
