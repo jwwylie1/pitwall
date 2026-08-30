@@ -2,7 +2,7 @@ import RaceSelectDropdown from './RaceSelectDropdown.jsx'
 import { Link } from 'react-router-dom';
 
 
-function Header({sessionKey, setSessionKey, title, showChange=true}) {
+function Header({setSessionKey, title, showChange=true}) {
 
   return (
     <div className="header-background w100 white">

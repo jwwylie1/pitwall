@@ -30,9 +30,11 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
   const handleDriversChange = (selected) => {
     let newDrivers = [...drivers, selected];
     if (newDrivers.length == 3) {
+      // replace the third newest driver
       newDrivers.shift();
     }
     if (newDrivers.length === 2 && newDrivers[0] === newDrivers[1]) {
+      // can't select 2 of same driver
       newDrivers.shift();
     }
     setDrivers(newDrivers)

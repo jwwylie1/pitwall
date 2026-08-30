@@ -10,7 +10,7 @@ function RadioExplainer({ sessionKey, setSessionKey }) {
 
 	return (
 		<>
-			<Header sessionKey={sessionKey} setSessionKey={setSessionKey} title="Radio Explanation Tool"/>
+			<Header setSessionKey={setSessionKey} title="Radio Explanation Tool"/>
 			<RaceHeader sessionKey={sessionKey} />
 			<RadioDropdown sessionKey={sessionKey} />
 		</>

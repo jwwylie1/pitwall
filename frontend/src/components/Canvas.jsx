@@ -8,7 +8,6 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   const canvasRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [canvasSize, setCanvasSize] = useState([]);
-  const [image, setImage] = useState(null);
   const [driver1pos, setDriver1pos] = useState({ x: 0, y: 0 });
   const [driver2pos, setDriver2pos] = useState({ x: 0, y: 0 });
   const [car1Location, setCar1Location] = useState(null);
@@ -36,7 +35,7 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   }
 
   function startAndEndOfLaps(driver, laps, lap) {
-    // Find the driver1Laps element with matching lap_number
+    // Find the element with matching lap_number
     const matchingDriverLapIndex = laps.findIndex(item => item.lap_number === Number(lap));
   
     // Check if a matching lap was found.
@@ -55,7 +54,7 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
         return [matchingDate, nextDate];
 
       } else {
-        console.warn(`No element found after lap_number: ${lap}. Cannot set d1Laps[1].`);
+        console.warn(`No element found after lap_number: ${lap}.`);
       }
     } else {
       document.getElementById('warning').style.display = 'flex'
@@ -64,11 +63,14 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   }
 
   function rotate(x, y, scale, deg, flips) {
-    // Convert rotation from degrees to radians
+    // OpenF1 uses their own coordinate system, this maps it to our canvas
+
     const radians = (deg * Math.PI) / 180;
+    // rotate to fit
     const Xs = x * Math.cos(radians) - y * Math.sin(radians);
     const Ys = x * Math.sin(radians) + y * Math.cos(radians);
 
+    // scale and flip over axes if needed
     const Xw = Xs * flips[0] * (scale);
     const Yw = Ys * flips[1] * (scale);
 
@@ -148,7 +150,6 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   useEffect(() => {
     if (car1Location && car2Location && race) {
       const img = new Image();
-      //img.src = `/assets/circuits/${race.name}.webp`;
       img.src = `/assets/circuits/${race.name}.webp`;
       img.onload = () => {
         const canvasWidth = window.innerWidth * 0.8; // 80% of the page width
@@ -165,6 +166,8 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
 
         context.drawImage(img, 0, 0, canvasWidth, canvasHeight);
         const pixels = context.getImageData(0, 0, canvasWidth, canvasHeight);
+
+        // turns image to pure black and white, 
         for (let i = 0; i < pixels.data.length; i += 4) {
           if (
             pixels.data[i] >= 200 &&
@@ -202,6 +205,7 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   }, [car1Location, race]);
 
   useEffect(() => {
+    // separate since cars send telemetry at different times
     const car1Available = car1Location && car1Data && frameIndex1 < car1Location.length - 1;
     const car2Available = car2Location && car2Data && frameIndex2 < car2Location.length - 1;
 
@@ -214,11 +218,11 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
     const dataTime2 = new Date(car2Data[dataIndex2]?.date).getTime() - startTime2.current;
 
     if (car1Available && currentTime >= locTime1) {
-      drawCar1(ctx, canvasRef.current);
+      drawCar1(ctx);
       setFrameIndex1(prev => prev+1);
     }
     if (car2Available && currentTime >= locTime2) {
-      drawCar2(ctx, canvasRef.current);
+      drawCar2(ctx);
       setFrameIndex2(prev => prev+1);
     }
 
@@ -249,7 +253,7 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
 
   }, [currentTime, frameIndex1, frameIndex2]);
 
-  const drawCar1 = (ctx, canvas) => {
+  const drawCar1 = (ctx) => {
 
     ctx.strokeStyle = `#${driver1.team_colour}`;
     const newCoords1 = rotate(
@@ -275,10 +279,9 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
       y: newCoords1.y,
     }));
 
-    setImage(canvas.toDataURL());
   };
 
-  const drawCar2 = (ctx, canvas) => {
+  const drawCar2 = (ctx) => {
 
     ctx.strokeStyle = `#${driver2.team_colour}`;
     const newCoords2 = rotate(
@@ -304,7 +307,6 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
       y: newCoords2.y,
     }));
 
-    setImage(canvas.toDataURL());
   };
 
   if (isLoading) {
@@ -318,8 +320,7 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   return (
     <>
       <div className="canvas-background">
-        <canvas ref={canvasRef} style={{ display: image ? "none" : "block" }} />
-        {image && <img src={image} alt="Image" />}
+        <canvas ref={canvasRef} />
         <br/><br/><br/>
         <i>*Paths are slightly offset for visual purposes</i>
       </div>
