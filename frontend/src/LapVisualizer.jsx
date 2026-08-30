@@ -99,7 +99,6 @@ function LapVisualizer({ sessionKey, setSessionKey }) {
 
         <h2 style={{ textDecoration: 'none' }}>Select 2 Drivers</h2>
         <DriverList drivers={driversList} changeDrivers={handleDriversChange} />
-        {/*<DriverList drivers={driversList} updateFunction={handleDriver2Change} />*/}
         <br/>
         <h2 style={{ textDecoration: 'none' }} id="speed-header">Selected Speed - 1x</h2>
         <input type="range" onChange={handleSpeedChange} min='1' max='10' value={speedMult}

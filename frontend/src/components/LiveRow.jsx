@@ -9,7 +9,7 @@ function LiveRow({ driver, data, avgData, dataIdx }) {
         {data?.[dataIdx]?.speed}
       </td>
       <td style={{ opacity: data?.[dataIdx]?.speed / MAX_SPEED_COLOR}}>
-        {(avgData.speed/dataIdx).toFixed(2)}
+        {dataIdx ? (avgData.speed/dataIdx).toFixed(2) : "-"}
       </td>
 
       <td style={{ color: `rgb(17, 
@@ -18,7 +18,7 @@ function LiveRow({ driver, data, avgData, dataIdx }) {
       </td>
       <td style={{ color: `rgb(17, 
         ${Math.floor((avgData.throttle/dataIdx / 100) * 255)}, 17)` }}>
-        {(avgData.throttle/dataIdx).toFixed(2)}
+        {dataIdx ? (avgData.throttle/dataIdx).toFixed(2) : "-"}
       </td>
 
       <td style={{ color: data?.[dataIdx]?.brake === 0 ? '#111' : 'red' }}>
@@ -26,7 +26,7 @@ function LiveRow({ driver, data, avgData, dataIdx }) {
       </td>
       <td style={{ color: `rgb(${Math.floor((avgData.brake/dataIdx / SATURATION_PCT) * 255)}, 
         17, 17)` }}>
-        {(avgData.brake/dataIdx).toFixed(2)}
+        {dataIdx ? (avgData.brake/dataIdx).toFixed(2) : "-"}
       </td>
 
       <td style={{ color: DRS_NUMS.has(data?.[dataIdx]?.drs) ? 'lime' : '#111' }}>
@@ -34,11 +34,11 @@ function LiveRow({ driver, data, avgData, dataIdx }) {
       </td>
       <td style={{ color: `rgb(17, ${Math.floor((avgData.drs/dataIdx / SATURATION_PCT) * 255)}, 
         17)` }}>
-        {(avgData.drs/dataIdx).toFixed(2)}
+        {dataIdx ? (avgData.drs/dataIdx).toFixed(2) : "-"}
       </td>
 
       <td>{data?.[dataIdx]?.n_gear}</td>
-      <td>{(avgData.gear/dataIdx).toFixed(2)}</td>
+      <td>{dataIdx ? (avgData.gear/dataIdx).toFixed(2) : "-"}</td>
     </tr>
   )
 }

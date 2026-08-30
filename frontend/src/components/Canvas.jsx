@@ -10,12 +10,12 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   const [canvasSize, setCanvasSize] = useState([]);
   const [driver1pos, setDriver1pos] = useState({ x: 0, y: 0 });
   const [driver2pos, setDriver2pos] = useState({ x: 0, y: 0 });
-  const [car1Location, setCar1Location] = useState(null);
-  const [car2Location, setCar2Location] = useState(null);
+  const [car1LocationData, setcar1LocationData] = useState(null);
+  const [car2LocationData, setcar2LocationData] = useState(null);
   const [car1Data, setCar1Data] = useState(null);
   const [car2Data, setCar2Data] = useState(null);
-  const [car1AvgData, setCar1AvgData] = useState({speed:0, throttle:0, brake:0, drs:0, gear:0, rpm:0})
-  const [car2AvgData, setCar2AvgData] = useState({speed:0, throttle:0, brake:0, drs:0, gear:0, rpm:0})
+  const [car1AvgData, setCar1AvgData] = useState({speed:0, throttle:0, brake:0, drs:0, gear:0 })
+  const [car2AvgData, setCar2AvgData] = useState({speed:0, throttle:0, brake:0, drs:0, gear:0 })
   const [frameIndex1, setFrameIndex1] = useState(0);
   const [frameIndex2, setFrameIndex2] = useState(0);
   const [dataIndex1, setDataIndex1] = useState(0);
@@ -110,13 +110,13 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
 
     const fetchData = async (driver1Times, driver2Times) => {
       // fetch data sequentially; concurrent hits rate limit
-      const car1Location = await fetchJsonData(
+      const car1LocationData = await fetchJsonData(
         `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver1.driver_number}&date%3E${driver1Times[0]}&date%3C${driver1Times[1]}`
       );
       
       await sleep(REQ_GAP_MS);
 
-      const car2Location = await fetchJsonData(
+      const car2LocationData = await fetchJsonData(
         `https://api.openf1.org/v1/location?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
       );
 
@@ -132,8 +132,8 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
         `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
       );
 
-      setCar1Location(car1Location);
-      setCar2Location(car2Location);
+      setcar1LocationData(car1LocationData);
+      setcar2LocationData(car2LocationData);
       setCar1Data(car1Data);
       setCar2Data(car2Data);
       setIsLoading(false);
@@ -141,17 +141,22 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
     };
     // remove any previous warnings
     document.getElementById('warning').style.display = 'none'
-    fetchLapTimes();
+    fetchLapTimes(); // this also calls fetchData
 
     document.getElementsByClassName('canvas-background')[0].scrollIntoView()
 
   }, []);
 
   useEffect(() => {
-    if (car1Location && car2Location && race) {
+    let interval = null;
+    let cancelled = false;
+
+    if (car1LocationData && car2LocationData && race) {
       const img = new Image();
       img.src = `/assets/circuits/${race.name}.webp`;
       img.onload = () => {
+        if (cancelled) return;
+
         const canvasWidth = window.innerWidth * 0.8; // 80% of the page width
         const aspectRatio = img.naturalWidth / img.naturalHeight;
         const canvasHeight = canvasWidth / aspectRatio;
@@ -185,34 +190,38 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
         context.lineWidth = 1.5;
 
         if (!startTime1.current) {
-          startTime1.current = new Date(car1Location[0].date).getTime();
+          startTime1.current = new Date(car1LocationData[0].date).getTime();
           playbackStart.current = Date.now();
         }
 
         if (!startTime2.current) {
-          startTime2.current = new Date(car2Location[0].date).getTime();
+          startTime2.current = new Date(car2LocationData[0].date).getTime();
           playbackStart.current = Date.now();
         }
 
-        const interval = setInterval(() => {
+        // kill the interval if we run a different comparison
+        interval = setInterval(() => {
           const elapsedTime = Date.now() - playbackStart.current;
           setCurrentTime(elapsedTime*speedMultiplier);
         }, POLL_INTERVAL_MS);
-
-        return () => clearInterval(interval);
       };
     }
-  }, [car1Location, race]);
+
+    return () => {
+      cancelled = true;
+      if (interval) {clearInterval(interval);}
+    }
+  }, [car1LocationData, car2LocationData, race]);
 
   useEffect(() => {
     // separate since cars send telemetry at different times
-    const car1Available = car1Location && car1Data && frameIndex1 < car1Location.length - 1;
-    const car2Available = car2Location && car2Data && frameIndex2 < car2Location.length - 1;
+    const car1Available = car1LocationData && car1Data && frameIndex1 < car1LocationData.length - 1;
+    const car2Available = car2LocationData && car2Data && frameIndex2 < car2LocationData.length - 1;
 
     if (!ctx || (!car1Available && !car2Available)) return;
 
-    const locTime1 = new Date(car1Location[frameIndex1]?.date).getTime() - startTime1.current;
-    const locTime2 = new Date(car2Location[frameIndex2]?.date).getTime() - startTime2.current;
+    const locTime1 = new Date(car1LocationData[frameIndex1]?.date).getTime() - startTime1.current;
+    const locTime2 = new Date(car2LocationData[frameIndex2]?.date).getTime() - startTime2.current;
 
     const dataTime1 = new Date(car1Data[dataIndex1]?.date).getTime() - startTime1.current;
     const dataTime2 = new Date(car2Data[dataIndex2]?.date).getTime() - startTime2.current;
@@ -234,7 +243,6 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
         brake: prevData.brake + car1Data[dataIndex1]?.brake,
         drs: prevData.drs + 100*(DRS_NUMS.has(car1Data[dataIndex1]?.drs)),
         gear: prevData.gear + car1Data[dataIndex1]?.n_gear,
-        rpm: prevData.rpm + car1Data[dataIndex1]?.rpm,
       }));
       setDataIndex1(prev => prev+1);
     }
@@ -246,7 +254,6 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
         brake: prevData.brake + car2Data[dataIndex2]?.brake,
         drs: prevData.drs + 100*(DRS_NUMS.has(car2Data[dataIndex2]?.drs)),
         gear: prevData.gear + car2Data[dataIndex2]?.n_gear,
-        rpm: prevData.rpm + car2Data[dataIndex2]?.rpm,
       }));
       setDataIndex2(prev => prev+1);
     }
@@ -257,8 +264,8 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
 
     ctx.strokeStyle = `#${driver1.team_colour}`;
     const newCoords1 = rotate(
-      car1Location[frameIndex1 + 1].x,
-      car1Location[frameIndex1 + 1].y,
+      car1LocationData[frameIndex1 + 1].x,
+      car1LocationData[frameIndex1 + 1].y,
       race.scale*canvasSize[0],
       race.angle,
       race.flip
@@ -285,8 +292,8 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
 
     ctx.strokeStyle = `#${driver2.team_colour}`;
     const newCoords2 = rotate(
-      car2Location[frameIndex2 + 1].x,
-      car2Location[frameIndex2 + 1].y,
+      car2LocationData[frameIndex2 + 1].x,
+      car2LocationData[frameIndex2 + 1].y,
       race.scale*canvasSize[0],
       race.angle,
       race.flip
@@ -334,7 +341,6 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
             <td colSpan='2'>BRAKE (on / off)</td>
             <td colSpan='2'>DRS (on / off)</td>
             <td colSpan='2'>GEAR</td>
-            {/*<td>RPM</td>*/}
           </tr>
 
           <tr>
