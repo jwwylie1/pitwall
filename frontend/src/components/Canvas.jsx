@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import LiveRow from './LiveRow';
 import { LINE_OFFSET, REQ_GAP_MS, DRS_NUMS, POLL_INTERVAL_MS } from '../data/constants';
 
@@ -8,23 +8,33 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
   const canvasRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [canvasSize, setCanvasSize] = useState([]);
-  const [driver1pos, setDriver1pos] = useState({ x: 0, y: 0 });
-  const [driver2pos, setDriver2pos] = useState({ x: 0, y: 0 });
-  const [car1LocationData, setcar1LocationData] = useState(null);
-  const [car2LocationData, setcar2LocationData] = useState(null);
-  const [car1Data, setCar1Data] = useState(null);
-  const [car2Data, setCar2Data] = useState(null);
-  const [car1AvgData, setCar1AvgData] = useState({speed:0, throttle:0, brake:0, drs:0, gear:0 })
-  const [car2AvgData, setCar2AvgData] = useState({speed:0, throttle:0, brake:0, drs:0, gear:0 })
-  const [frameIndex1, setFrameIndex1] = useState(0);
-  const [frameIndex2, setFrameIndex2] = useState(0);
-  const [dataIndex1, setDataIndex1] = useState(0);
-  const [dataIndex2, setDataIndex2] = useState(0);
+  const cars = useMemo(() => [
+    { driver: driver1, offset: -LINE_OFFSET },
+    { driver: driver2, offset: LINE_OFFSET},
+  ], [driver1, driver2]);
+  const [driverPos, setDriverPos] = useState(() => cars.map(() => ({x:0, y:0})));
+  const [carLocationData, setCarLocationData] = useState(null)
+  const [carData, setCarData] = useState(null);
+  const [avgData, setAvgData] = useState(() => 
+    cars.map(() => ({speed:0, throttle:0, brake:0, drs:0, gear:0 }))
+  );
+  const [frameIndex, setFrameIndex] = useState(() => cars.map(() => 0));
+  const [dataIndex, setDataIndex] = useState(() => cars.map(() => 0));
   const [ctx, setCtx] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const playbackStart = useRef(null);
-  const startTime1 = useRef(null);
-  const startTime2 = useRef(null);
+  const startTimes = useRef([]);
+
+  const updateCar = (setFunc, i, updated) => {
+    setFunc(currentArray => {
+      return currentArray.map((value, index) => {
+        if (index === i) {
+          return updated(value)
+        }
+        return value;
+      });
+    });
+  }
 
   const fetchJsonData = async (url) => {
     const res = await fetch(url);
@@ -39,23 +49,16 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
     const matchingDriverLapIndex = laps.findIndex(item => item.lap_number === Number(lap));
   
     // Check if a matching lap was found.
-    if (matchingDriverLapIndex !== -1) {
+    if (matchingDriverLapIndex !== -1 && matchingDriverLapIndex+1 < laps.length) {
       // Extract the 'date' of the matching lap
       const matchingDate = laps[matchingDriverLapIndex].date_start;
   
       // Extract the date of the element immediately after the matching lap
       const nextLapIndex = matchingDriverLapIndex + 1;
-  
-      // Check if there *is* an element after the matching lap
-      if (nextLapIndex < laps.length) {
-        const nextDate = laps[nextLapIndex].date_start;
-  
-        // Set the first and second elements of d1Laps
-        return [matchingDate, nextDate];
+      const nextDate = laps[nextLapIndex].date_start;
 
-      } else {
-        console.warn(`No element found after lap_number: ${lap}.`);
-      }
+      // Set the first and second elements of d1Laps
+      return [matchingDate, nextDate];
     } else {
       document.getElementById('warning').style.display = 'flex'
       document.getElementById('warning').innerText = `${driver.last_name} did not complete lap ${lap}.`
@@ -132,10 +135,8 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
         `https://api.openf1.org/v1/car_data?session_key=${race.session_key}&driver_number=${driver2.driver_number}&date%3E${driver2Times[0]}&date%3C${driver2Times[1]}`
       );
 
-      setcar1LocationData(car1LocationData);
-      setcar2LocationData(car2LocationData);
-      setCar1Data(car1Data);
-      setCar2Data(car2Data);
+      setCarLocationData([car1LocationData, car2LocationData]);
+      setCarData([car1Data, car2Data]);
       setIsLoading(false);
 
     };
@@ -151,7 +152,7 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
     let interval = null;
     let cancelled = false;
 
-    if (car1LocationData && car2LocationData && race) {
+    if (carLocationData && race) {
       const img = new Image();
       img.src = `/assets/circuits/${race.name}.webp`;
       img.onload = () => {
@@ -189,13 +190,8 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
         context.putImageData(pixels, 0, 0);
         context.lineWidth = 1.5;
 
-        if (!startTime1.current) {
-          startTime1.current = new Date(car1LocationData[0].date).getTime();
-          playbackStart.current = Date.now();
-        }
-
-        if (!startTime2.current) {
-          startTime2.current = new Date(car2LocationData[0].date).getTime();
+        if (startTimes.current.length === 0) {
+          startTimes.current = carLocationData.map(data => new Date(data[0].date).getTime());
           playbackStart.current = Date.now();
         }
 
@@ -211,107 +207,67 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
       cancelled = true;
       if (interval) {clearInterval(interval);}
     }
-  }, [car1LocationData, car2LocationData, race]);
+  }, [carLocationData, race]);
 
   useEffect(() => {
     // separate since cars send telemetry at different times
-    const car1Available = car1LocationData && car1Data && frameIndex1 < car1LocationData.length - 1;
-    const car2Available = car2LocationData && car2Data && frameIndex2 < car2LocationData.length - 1;
+    const available = cars.map((car, i) => {
+      return carLocationData?.[i] && carData[i] && frameIndex[i] < carLocationData[i].length - 1;
+    })
 
-    if (!ctx || (!car1Available && !car2Available)) return;
+    if (!ctx || (!available.some(Boolean))) return;
 
-    const locTime1 = new Date(car1LocationData[frameIndex1]?.date).getTime() - startTime1.current;
-    const locTime2 = new Date(car2LocationData[frameIndex2]?.date).getTime() - startTime2.current;
+    cars.forEach((car, i) => {
+      if (!available[i] || !carLocationData) return;
 
-    const dataTime1 = new Date(car1Data[dataIndex1]?.date).getTime() - startTime1.current;
-    const dataTime2 = new Date(car2Data[dataIndex2]?.date).getTime() - startTime2.current;
+      const locTime = new Date(carLocationData[i][frameIndex[i]]?.date).getTime() - startTimes.current[i];
+      const dataTime = new Date(carData[i][dataIndex[i]]?.date).getTime() - startTimes.current[i];
 
-    if (car1Available && currentTime >= locTime1) {
-      drawCar1(ctx);
-      setFrameIndex1(prev => prev+1);
-    }
-    if (car2Available && currentTime >= locTime2) {
-      drawCar2(ctx);
-      setFrameIndex2(prev => prev+1);
-    }
+      if (currentTime >= locTime) {
+        drawCar(ctx, i);
+        updateCar(setFrameIndex, i, prev => prev+1);
+      }
 
-    if (car1Available && currentTime >= dataTime1) {
-      setCar1AvgData(prevData => ({
-        ...prevData,
-        speed: prevData.speed + car1Data[dataIndex1]?.speed,
-        throttle: prevData.throttle + car1Data[dataIndex1]?.throttle,
-        brake: prevData.brake + car1Data[dataIndex1]?.brake,
-        drs: prevData.drs + 100*(DRS_NUMS.has(car1Data[dataIndex1]?.drs)),
-        gear: prevData.gear + car1Data[dataIndex1]?.n_gear,
-      }));
-      setDataIndex1(prev => prev+1);
-    }
-    if (car2Available && currentTime >= dataTime2) {
-      setCar2AvgData(prevData => ({
-        ...prevData,
-        speed: prevData.speed + car2Data[dataIndex2]?.speed,
-        throttle: prevData.throttle + car2Data[dataIndex2]?.throttle,
-        brake: prevData.brake + car2Data[dataIndex2]?.brake,
-        drs: prevData.drs + 100*(DRS_NUMS.has(car2Data[dataIndex2]?.drs)),
-        gear: prevData.gear + car2Data[dataIndex2]?.n_gear,
-      }));
-      setDataIndex2(prev => prev+1);
-    }
+      if (currentTime >= dataTime) {
+        updateCar(setAvgData, i, prevData => ({
+          ...prevData,
+          speed: prevData.speed + carData[i][dataIndex[i]]?.speed,
+          throttle: prevData.throttle + carData[i][dataIndex[i]]?.throttle,
+          brake: prevData.brake + carData[i][dataIndex[i]]?.brake,
+          drs: prevData.drs + 100*(DRS_NUMS.has(carData[i][dataIndex[i]]?.drs)),
+          gear: prevData.gear + carData[i][dataIndex[i]]?.n_gear,
+        }));
+        updateCar(setDataIndex, i, prev => prev+1);
+      }
+    });
 
-  }, [currentTime, frameIndex1, frameIndex2]);
+  }, [currentTime, frameIndex, dataIndex]);
 
-  const drawCar1 = (ctx) => {
+  const drawCar = (ctx, i) => {
 
-    ctx.strokeStyle = `#${driver1.team_colour}`;
-    const newCoords1 = rotate(
-      car1LocationData[frameIndex1 + 1].x,
-      car1LocationData[frameIndex1 + 1].y,
+    ctx.strokeStyle = `#${cars[i].driver.team_colour}`;
+    const newCoords = rotate(
+      carLocationData[i][frameIndex[i] + 1].x,
+      carLocationData[i][frameIndex[i] + 1].y,
       race.scale*canvasSize[0],
       race.angle,
       race.flip
     );
 
-    newCoords1.x -= LINE_OFFSET;
-    newCoords1.y -= LINE_OFFSET;
+    newCoords.x += cars[i].offset;
+    newCoords.y += cars[i].offset;
 
-    if (driver1pos.x != 0 && driver1pos.y != 0) {
+    if (driverPos[i].x != 0 && driverPos[i].y != 0) {
       ctx.beginPath(); // Start a new path
-      ctx.moveTo(driver1pos.x, driver1pos.y); // Move the "pen" to the starting point
-      ctx.lineTo(newCoords1.x, newCoords1.y); // Draw a line to the ending point
+      ctx.moveTo(driverPos[i].x, driverPos[i].y); // Move the "pen" to the starting point
+      ctx.lineTo(newCoords.x, newCoords.y); // Draw a line to the ending point
       ctx.stroke(); // Actually draw the line (use ctx.fill() for filled lines)
       ctx.closePath(); // Close the path
     }
-    setDriver1pos(() => ({
-      x: newCoords1.x,
-      y: newCoords1.y,
-    }));
-
-  };
-
-  const drawCar2 = (ctx) => {
-
-    ctx.strokeStyle = `#${driver2.team_colour}`;
-    const newCoords2 = rotate(
-      car2LocationData[frameIndex2 + 1].x,
-      car2LocationData[frameIndex2 + 1].y,
-      race.scale*canvasSize[0],
-      race.angle,
-      race.flip
-    );
-
-    newCoords2.x += LINE_OFFSET;
-    newCoords2.y += LINE_OFFSET;
-
-    if (driver2pos.x != 0 && driver2pos.y != 0) {
-      ctx.beginPath(); // Start a new path
-      ctx.moveTo(driver2pos.x, driver2pos.y); // Move the "pen" to the starting point
-      ctx.lineTo(newCoords2.x, newCoords2.y); // Draw a line to the ending point
-      ctx.stroke(); // Actually draw the line (use ctx.fill() for filled lines)
-      ctx.closePath(); // Close the path
-    }
-    setDriver2pos(() => ({
-      x: newCoords2.x,
-      y: newCoords2.y,
+  
+    updateCar(setDriverPos, i, () => ({
+      x: newCoords.x,
+      y: newCoords.y,
     }));
 
   };
@@ -356,8 +312,10 @@ function Canvas({ race, driver1, driver2, lap, speedMultiplier }) {
             <td>AVG</td>
           </tr>
 
-          <LiveRow driver={driver1} data={car1Data} avgData={car1AvgData} dataIdx={dataIndex1} />
-          <LiveRow driver={driver2} data={car2Data} avgData={car2AvgData} dataIdx={dataIndex2} />
+          {cars.map((car, i) => {
+            return (<LiveRow driver={car.driver} data={carData?.[i]} avgData={avgData[i]} 
+            dataIdx={dataIndex[i]} key={car.driver.driver_number} />);
+          })}
 
         </tbody>
       </table>
